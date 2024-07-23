@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "clickup-toolkit"
+version = "0.1.0"
+description = ""
+authors = ["Bharat Kalluri <bharatkalluri@protonmail.com>"]
+readme = "README.md"
+packages = [{ include = "clickup_toolkit" }]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pydantic = "^2.8.2"
+requests = "^2.32.3"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
