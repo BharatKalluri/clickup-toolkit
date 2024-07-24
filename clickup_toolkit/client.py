@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Union
 
 import requests
 
@@ -22,7 +23,9 @@ class ClickUpClient:
     def __get_headers(self):
         return {"Authorization": self.api_key}
 
-    def __make_request(self, path: str, method: RequestMethods, payload=None):
+    def __make_request(
+        self, path: str, method: RequestMethods, payload=None
+    ) -> Union[dict, list, None]:
         response = requests.request(
             method.value, path, headers=self.__get_headers(), json=payload
         )
@@ -38,21 +41,13 @@ class ClickUpClient:
             method=RequestMethods.GET,
             path=path,
         )
-        if not response.ok:
-            raise ClickupApiError(
-                message=response.text, status_code=response.status_code
-            )
-        return Task(**response.json())
+        return Task(**response)
 
     def update_task(self, task_id: str, update_task_payload: UpdateTaskPayload) -> Task:
         path = f"{self.base_url}/task/{task_id}"
-        response = requests.put(
+        response = self.__make_request(
             path,
-            headers=self.__get_headers(),
-            json=update_task_payload.model_dump(exclude_none=True),
+            method=RequestMethods.PUT,
+            payload=update_task_payload.model_dump(exclude_none=True),
         )
-        if not response.ok:
-            raise ClickupApiError(
-                message=response.text, status_code=response.status_code
-            )
-        return Task(**response.json())
+        return Task(**response)
