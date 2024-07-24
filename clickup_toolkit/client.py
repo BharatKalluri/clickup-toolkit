@@ -1,10 +1,16 @@
 from enum import Enum
-from typing import Union
+from typing import Union, Optional
 
 import requests
 
 from clickup_toolkit.errors import ClickupApiError
-from clickup_toolkit.models import Task, UpdateTaskPayload
+from clickup_toolkit.models import (
+    Task,
+    UpdateTaskPayload,
+    FetchAllTasksPayload,
+    FetchAllTasksResponse,
+    DeleteTaskPayload,
+)
 
 
 class RequestMethods(Enum):
@@ -24,16 +30,34 @@ class ClickUpClient:
         return {"Authorization": self.api_key}
 
     def __make_request(
-        self, path: str, method: RequestMethods, payload=None
+        self, path: str, method: RequestMethods, payload=None, params=None
     ) -> Union[dict, list, None]:
         response = requests.request(
-            method.value, path, headers=self.__get_headers(), json=payload
+            method.value,
+            path,
+            headers=self.__get_headers(),
+            json=payload,
+            params=params,
         )
         if not response.ok:
             raise ClickupApiError(
                 message=response.text, status_code=response.status_code
             )
-        return response.json()
+        return response.json() if response.text else None
+
+    # tasks
+
+    def fetch_all_tasks(self, list_id: str, payload: FetchAllTasksPayload):
+        url_path = f"{self.base_url}/list/{list_id}/task"
+        response = self.__make_request(
+            method=RequestMethods.GET,
+            path=url_path,
+            params=payload.model_dump(exclude_none=True),
+        )
+        return FetchAllTasksResponse(
+            tasks=[Task(**task) for task in response.get("tasks", [])],
+            last_page=response.get("last_page"),
+        )
 
     def fetch_task(self, task_id: str) -> Task:
         path = f"{self.base_url}/task/{task_id}"
@@ -51,3 +75,14 @@ class ClickUpClient:
             payload=update_task_payload.model_dump(exclude_none=True),
         )
         return Task(**response)
+
+    def delete_task(
+        self, task_id: str, payload: Optional[DeleteTaskPayload] = None
+    ) -> None:
+        url_path = f"{self.base_url}/task/{task_id}"
+        query_params = payload.model_dump(exclude_none=True) if payload else {}
+        self.__make_request(
+            method=RequestMethods.DELETE,
+            path=url_path,
+            params=query_params,
+        )
