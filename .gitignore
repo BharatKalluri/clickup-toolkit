@@ -6,3 +6,7 @@ __pycache__
 *.pyo
 *.pyd
 dist
+.aider*
+.env
+.DS_Store
+*.egg-info
